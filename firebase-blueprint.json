@@ -1,0 +1,92 @@
+
+{
+  "entities": {
+    "UserOS": {
+      "title": "User Operating System",
+      "description": "The core persistent state for a founder's OS progress.",
+      "type": "object",
+      "properties": {
+        "level": { "type": "number" },
+        "xp": { "type": "number" },
+        "reputation": { "type": "number" },
+        "stage": { "type": "string", "enum": ["Dreamer", "Builder", "Operator", "Strategist", "Visionary", "Empire Architect"] },
+        "skills": { "$ref": "#/backend/entities/CognitiveSkills" },
+        "dna": { "type": "object" },
+        "streak": { "type": "number" },
+        "onboarded": { "type": "boolean" },
+        "lastActive": { "type": "number" }
+      },
+      "required": ["level", "xp", "reputation", "stage", "skills"]
+    },
+    "CognitiveSkills": {
+      "title": "Cognitive Mastery Skills",
+      "description": "Six-axis skill metrics for founder performance.",
+      "type": "object",
+      "properties": {
+        "strategicThinking": { "type": "number" },
+        "financialIntelligence": { "type": "number" },
+        "riskAnalysis": { "type": "number" },
+        "negotiation": { "type": "number" },
+        "marketAwareness": { "type": "number" },
+        "leadership": { "type": "number" }
+      }
+    },
+    "VirtualCompany": {
+      "title": "Virtual Startup Company",
+      "description": "The founder's active virtual business entity.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "mission": { "type": "string" },
+        "revenue": { "type": "number" },
+        "stage": { "type": "string", "enum": ["Seed", "Series A", "Series B", "Growth", "IPO"] },
+        "employees": { "type": "number" },
+        "valuation": { "type": "number" },
+        "burnRate": { "type": "number" }
+      }
+    },
+    "Badge": {
+      "title": "Founder Badge",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "tier": { "type": "string", "enum": ["Bronze", "Silver", "Gold", "Elite"] },
+        "unlockedAt": { "type": "number" },
+        "description": { "type": "string" }
+      }
+    },
+    "PitchSubmission": {
+      "title": "Pitch Arena Submission",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "text": { "type": "string" },
+        "score": { "type": "number" },
+        "feedback": { "type": "string" },
+        "timestamp": { "type": "number" }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["google", "password"]
+  },
+  "firestore": {
+    "/users/{userId}/os": {
+      "schema": "#/backend/entities/UserOS",
+      "description": "Persistent OS state for each founder."
+    },
+    "/users/{userId}/company": {
+      "schema": "#/backend/entities/VirtualCompany",
+      "description": "The founder's active virtual company."
+    },
+    "/users/{userId}/badges": {
+      "schema": "#/backend/entities/Badge",
+      "description": "Collection of unlocked achievements."
+    },
+    "/pitches": {
+      "schema": "#/backend/entities/PitchSubmission",
+      "description": "Global arena for pitch submissions and leaderboards."
+    }
+  }
+}

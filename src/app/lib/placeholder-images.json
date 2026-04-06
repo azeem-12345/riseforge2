@@ -1,0 +1,53 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-bg",
+      "description": "Premium dark cinematic background with gold accents",
+      "imageUrl": "https://picsum.photos/seed/founder-hero/1920/1080",
+      "imageHint": "luxury workspace"
+    },
+    {
+      "id": "onboarding-dna",
+      "description": "Futuristic biometric assessment screen",
+      "imageUrl": "https://picsum.photos/seed/biometric/800/600",
+      "imageHint": "digital matrix"
+    },
+    {
+      "id": "simulation-map",
+      "description": "Global market heat map for startup simulation",
+      "imageUrl": "https://picsum.photos/seed/market-map/1200/800",
+      "imageHint": "stock market data"
+    },
+    {
+      "id": "badge-elite",
+      "description": "Golden eagle founder badge",
+      "imageUrl": "https://picsum.photos/seed/badge-gold/200/200",
+      "imageHint": "gold medal"
+    },
+    {
+      "id": "startup-formula",
+      "description": "Simple Startup Formula: Outcome = Idea x Product x Execution x Team x Luck",
+      "imageUrl": "https://picsum.photos/seed/startup-formula/800/600",
+      "imageHint": "startup formula"
+    },
+    {
+      "id": "growth-graph",
+      "description": "Startup Growth Curve vs Traditional Business",
+      "imageUrl": "https://picsum.photos/seed/growth-curve/800/600",
+      "imageHint": "growth graph"
+    },
+    {
+      "id": "market-dynamics",
+      "description": "Market Monopoly vs Competition Dynamics",
+      "imageUrl": "https://picsum.photos/seed/market-dyn/800/600",
+      "imageHint": "market diagram"
+    },
+    {
+      "id": "founder-vision",
+      "description": "The Founder's Strategic Vision",
+      "imageUrl": "https://photos.app.goo.gl/uw2rqiAvYShnjN6w7",
+      "imageHint": "strategic vision"
+    }
+  ]
+}
