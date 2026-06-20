@@ -1,30 +1,64 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import GameShell from '@/components/game/GameShell'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Eye, Zap, Target, Search, ArrowUpRight, Clock, Sparkles, RefreshCw, Loader2 } from 'lucide-react'
+import { 
+  Eye, 
+  Zap, 
+  Search, 
+  ArrowUpRight, 
+  Clock, 
+  Sparkles, 
+  RefreshCw, 
+  Loader2, 
+  MessageSquare
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import PageGuide from '@/components/game/PageGuide'
 import { generateMarketProblems } from '@/ai/flows/generate-problems-flow'
+import { founderMentor } from '@/ai/flows/founder-mentor-flow'
+import { useGameState } from '@/hooks/use-game-state'
 
 export default function OpportunityScannerPage() {
+  const { state } = useGameState()
+  const router = useRouter()
+  
   const [problems, setProblems] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [logs, setLogs] = useState<any[]>([])
   const [selectedTrend, setSelectedTrend] = useState<any | null>(null)
+  
+  // Mentor Discussion trigger states
+  const [discussing, setDiscussing] = useState(false)
+
+  // Load saved notebook logs from localStorage on mount
+  useEffect(() => {
+    const savedLogs = localStorage.getItem('riseforge_notebook_logs')
+    if (savedLogs) {
+      try {
+        setLogs(JSON.parse(savedLogs))
+      } catch (e) {
+        console.error("Failed to load notebook logs", e)
+      }
+    }
+  }, [])
 
   const fetchProblems = async () => {
     setLoading(true)
+    setError(null)
     setSelectedTrend(null)
     try {
       const result = await generateMarketProblems({ count: 3 })
       setProblems(result.problems)
     } catch (err) {
       console.error(err)
+      setError("Unable to generate struggles. Please check that GEMINI_API_KEY or GOOGLE_GENAI_API_KEY is configured in your server environment.")
     } finally {
       setLoading(false)
     }
@@ -36,8 +70,51 @@ export default function OpportunityScannerPage() {
 
   const logPattern = (trend: any) => {
     if (logs.find(l => l.id === trend.id)) return;
-    setLogs(prev => [...prev, { ...trend, timestamp: Date.now() }])
+    const newLogs = [...logs, { ...trend, timestamp: Date.now() }]
+    setLogs(newLogs)
+    localStorage.setItem('riseforge_notebook_logs', JSON.stringify(newLogs))
     setSelectedTrend(null)
+  }
+
+  const startMentorDiscussion = async (trend: any) => {
+    if (discussing) return
+    setDiscussing(true)
+    try {
+      const userMsgText = `I want to discuss the market opportunity: "${trend.title}" affecting "${trend.segment}". The problem description is: "${trend.description}". The suggested potential solution is: "${trend.potential}". How should I get started validating this?`
+      
+      // Call the server action to get strategic advice
+      const result = await founderMentor({
+        userQuestion: userMsgText,
+        level: state.level,
+        levelTitle: state.levelTitle
+      })
+      
+      // Save to localStorage as a structured chat thread
+      const saved = localStorage.getItem('riseforge_mentor_threads')
+      const threads = saved ? JSON.parse(saved) : []
+      
+      const threadId = `thread-${Date.now()}`
+      const userMsg = { role: 'user', text: userMsgText, timestamp: Date.now() }
+      const mentorMsg = { role: 'mentor', data: result, timestamp: Date.now() }
+      
+      const newThread = {
+        id: threadId,
+        title: trend.title, // Short title for the chatbot thread sidebar
+        messages: [userMsg, mentorMsg],
+        timestamp: Date.now()
+      }
+      
+      threads.unshift(newThread)
+      localStorage.setItem('riseforge_mentor_threads', JSON.stringify(threads))
+      localStorage.setItem('riseforge_mentor_active_thread_id', threadId)
+      
+      // Redirect to the mentor page
+      router.push('/mentor')
+    } catch (err) {
+      console.error("Failed to start mentor discussion:", err)
+    } finally {
+      setDiscussing(false)
+    }
   }
 
   return (
@@ -58,20 +135,20 @@ export default function OpportunityScannerPage() {
             <h1 className="text-3xl font-headline font-black tracking-tighter">Finding Problems</h1>
             <p className="text-[11px] text-muted-foreground uppercase font-black tracking-[0.3em]">Step 1: Look at the world</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Button 
               variant="outline" 
               size="sm" 
               onClick={fetchProblems} 
               disabled={loading}
-              className="rounded-xl border-white/10 h-10 text-[10px] font-black uppercase tracking-widest"
+              className="rounded-xl border-white/10 h-10 text-[10px] font-black uppercase tracking-widest animate-fade-in"
             >
               {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
               Refresh Struggles
             </Button>
-            <div className="glass-card px-6 py-4 rounded-2xl border-white/5">
-              <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1">Struggles Found</p>
-              <p className="text-xl font-black tabular-nums">{logs.length} / 10</p>
+            <div className="glass-card px-6 py-2.5 rounded-xl border-white/5">
+              <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Struggles Found</p>
+              <p className="text-lg font-black tabular-nums">{logs.length} / 10</p>
             </div>
           </div>
         </div>
@@ -89,6 +166,18 @@ export default function OpportunityScannerPage() {
                     <CardContent className="p-10" />
                   </Card>
                 ))
+              ) : error ? (
+                <Card className="glass-card border-red-500/10 bg-red-500/[0.02] p-8 text-center space-y-4">
+                  <p className="text-xs text-red-400 font-medium max-w-md mx-auto">{error}</p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={fetchProblems}
+                    className="border-red-500/20 text-red-400 hover:bg-red-500/10 h-8 text-[10px] font-semibold uppercase tracking-wider rounded-lg"
+                  >
+                    Try Again
+                  </Button>
+                </Card>
               ) : (
                 problems.map((trend) => (
                   <Card 
@@ -145,12 +234,34 @@ export default function OpportunityScannerPage() {
                       </div>
                       <p className="text-[11px] font-bold text-foreground/90">{selectedTrend.potential}</p>
                     </div>
-                    <Button 
-                      onClick={() => logPattern(selectedTrend)}
-                      className="w-full h-12 rounded-xl bg-accent text-white font-black uppercase text-[10px] tracking-widest shadow-xl shadow-accent/20"
-                    >
-                      Save to My Notebook
-                    </Button>
+                    
+                    <div className="space-y-3 pt-2">
+                      <Button 
+                        onClick={() => logPattern(selectedTrend)}
+                        className="w-full h-11 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-black uppercase text-[10px] tracking-widest"
+                      >
+                        Save to My Notebook
+                      </Button>
+
+                      {/* Mentor Discussion Trigger */}
+                      <Button 
+                        onClick={() => startMentorDiscussion(selectedTrend)}
+                        disabled={discussing}
+                        className="w-full h-11 rounded-xl bg-accent hover:bg-accent/90 text-white font-black uppercase text-[10px] tracking-widest shadow-xl shadow-accent/20 flex items-center justify-center gap-2"
+                      >
+                        {discussing ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Prepping Advisor...
+                          </>
+                        ) : (
+                          <>
+                            <MessageSquare className="w-4 h-4" />
+                            Discuss with Mentor
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </Card>
                 </motion.div>
               ) : (
